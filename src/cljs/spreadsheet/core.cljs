@@ -7,29 +7,45 @@
               [cljsjs.react :as react])
     (:import goog.History))
 
-(def rows 51)
-
 (defn a-to-z []
   (map char (range 65 91)))
 
-(defn cell [i v]
-  (let [editing (atom false)]
-    [:td {:id i} v]
-    )
+(def rows 51)
+
+(defn init-spreadsheet []
+  (let [s {}]
+    (into s (for [x (range 1 rows)]
+              (for [y (a-to-z)]
+                [(str y x) ""])))))
+
+(def spreadsheet
+  (atom {:cells (init-spreadsheet)})
   )
 
-(defn spreadsheet []
-  [:table {:class "bordered"}
+(defn header-cell [i]
+  [:th {:id i :width "100px"} i]
+  )
+
+(defn handle-input [i e]
+  (swap! spreadsheet assoc i (.-target.value e))
+  )
+
+(defn cell [i v]
+  [:td {:id i :width "100px" :contentEditable "true" :onInput (fn [e] (handle-input i e))} v]
+  )
+
+(defn table-spreadsheet []
+  [:table {:id "spreadsheet" :class "bordered" :style {:table-layout "fixed"}}
    (for [t (cons "#" (a-to-z))]
-     (cell t t))
+     (header-cell t))
    (for [x (range 1 rows)]
      [:tr
-      (cell x x)
+      (header-cell x)
       (for [y (a-to-z)]
-            (cell "2" ""))])])
+            (cell (str y x) ""))])])
 
 (defn mount-root []
-  (reagent/render [spreadsheet] (.getElementById js/document "app")))
+  (reagent/render [table-spreadsheet] (.getElementById js/document "app")))
 
 (defn init! []
   (mount-root))
